@@ -1,18 +1,19 @@
-// server.js
 const express = require("express");
-const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
+const { PDFDocument, rgb } = require("pdf-lib");
 const fs = require("fs");
+const path = require("path");
+
 const app = express();
 app.use(express.json());
 
 app.post("/fill-pdf", async (req, res) => {
   const { name, date } = req.body;
 
-  const existingPdfBytes = fs.readFileSync("5-1.pdf");
-  const customFont = fs.readFileSync("fonts/manrope-medium.ttf");
+  const pdfBytes = fs.readFileSync(path.join(__dirname, "5-1.pdf"));
+  const fontBytes = fs.readFileSync(path.join(__dirname, "Manrope-Medium.ttf"));
 
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  const font = await pdfDoc.embedFont(customFont);
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const font = await pdfDoc.embedFont(fontBytes);
 
   const pages = pdfDoc.getPages();
   const firstPage = pages[0];
@@ -21,21 +22,24 @@ app.post("/fill-pdf", async (req, res) => {
     x: 100,
     y: 500,
     size: 18,
-    font: font,
-    color: rgb(0.1, 0.2, 0.6),
+    font,
+    color: rgb(0.2, 0.2, 0.7),
   });
 
   firstPage.drawText(date, {
     x: 100,
     y: 470,
     size: 14,
-    font: font,
+    font,
     color: rgb(0, 0, 0),
   });
 
-  const pdfBytes = await pdfDoc.save();
+  const finalPdfBytes = await pdfDoc.save();
+
   res.setHeader("Content-Type", "application/pdf");
-  res.send(Buffer.from(pdfBytes));
+  res.send(Buffer.from(finalPdfBytes));
 });
 
-app.listen(3000, () => console.log("PDF filler running on port 3000"));
+app.listen(3000, () => {
+  console.log("PDF filler running on port 3000");
+});
